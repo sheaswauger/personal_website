@@ -1,0 +1,181 @@
+sheaswauger.com — Site Rebuild Spec
+Overview
+Personal website for Shea Swauger: researcher, writer, and PhD student focused on privacy, data, ethics, and education. Migrating from Wix to a self-hosted static site to eliminate monthly hosting fees.
+Stack
+	•	Framework: Astro (latest stable)
+	•	Styling: Tailwind CSS
+	•	Base theme: Astro Sphere (markhorn-dev/astro-sphere)
+	•	Language: TypeScript
+	•	Hosting: Vercel (free tier)
+	•	Domain: sheaswauger.com (currently on Wix — transfer AFTER site is live)
+	•	Repo: GitHub (to be created)
+Design Decisions
+	•	Start from Astro Sphere as base, not from scratch
+	•	Remove immediately on scaffold:
+	◦	Starfield/stars background component
+	◦	Rotating 3D globe component
+	◦	Typewriter/cycling text animation
+	◦	All "software engineer" / "crypto enthusiast" demo content
+	•	Dark mode default (Astro Sphere default), light mode toggle retained
+	•	Clean typographic hero: name, tagline, two CTAs
+	•	Two-column homepage layout: Recent Posts (left) + Recent Writing (right)
+	•	No decorative flourishes — content-forward
+Navigation (in order)
+	1	Home
+	2	Writing
+	3	Presentations
+	4	Grants
+	5	Press
+	6	Blog
+Room for future additions: Research, CV, Teaching, Newsletter
+Pages
+Home (/)
+	•	Hero: name, bio, two CTAs ("Read my writing", "View presentations")
+	•	Two-column section below divider:
+	◦	Left: Recent blog posts (date, title, tags)
+	◦	Right: Recent academic writing (title, venue, year)
+	•	Footer: status dot, copyright, social links + email
+Bio text: "A researcher and writer who cares about privacy, data, ethics, and education. Currently a PhD student examining surveillance, algorithmic systems, and academic institutions."
+
+Writing (/writing)
+Academic publications and journalism. Each entry has:
+	•	Title (linked to external URL)
+	•	Venue + year
+	•	Co-authors (if any)
+Content to migrate (most recent first):
+	•	Ethical Use of Pervasive Data for Research — GWU Institute for Data Democracy and Politics, 2025
+	•	Learning Analytics and the Abolitionist Imagination — Journal of Learning Analytics, 2023
+	•	Data Sharing for Research: A Compendium — Future of Privacy Forum, 2023
+	•	Book Review: Audrey Watters' Teaching Machines — College and Research Libraries, 2022
+	•	The Playbook: Data Sharing for Research — Future of Privacy Forum, 2022
+	•	Leaving Surveillance Tech Behind in Higher Education — Othering and Belonging Institute, 2021
+	•	The Next Normal: Algorithms will take over college — The Washington Post, 2021
+	•	Make Labs, Not War — College and Undergraduate Libraries, 2021
+	•	Our Bodies Encoded: Algorithmic Test Proctoring in Higher Education — Hybrid Pedagogy, 2020
+	•	Software that Monitors Students During Tests Perpetuates Inequality — MIT Technology Review, 2020
+	•	A Practical Guide to Performing a Library User Data Risk Assessment — DLF, 2020
+	•	Participatory Approaches for Designing and Sustaining Privacy-Oriented Library Services — CSCCE, 2019
+	•	'Use Books, Not People' — CSCCE, 2019
+	•	Open Access, Power, and Privilege — College & Research Libraries News, 2017
+	•	The Open Source Alliance for Open Scholarship Handbook — Code for Science and Society, 2018
+	•	What Factors Influence Where Researchers Deposit their Data? — International Journal of Digital Curation, 2015
+	•	Sharing is Caring, But Should it Count? — UC3, 2014
+	•	Metadata Capital in a Data Repository — Dublin Core Conference, 2013
+
+Presentations (/presentations)
+Talks, keynotes, panels. Videos and presentations are unified here — video is an artifact of the presentation, not a separate section.
+Each entry has:
+	•	Title
+	•	Event/venue
+	•	Date
+	•	Optional: video_url → renders embedded video or play button
+	•	Optional: slides_url → renders slides link
+	•	Optional: description
+If video_url exists, embed renders. If not, entry shows without it. No standalone Videos page.
+Content: To be populated from existing Wix presentations page during build.
+
+Grants (/grants)
+Funding and grant history. Each entry has:
+	•	Grant name/title
+	•	Funding body
+	•	Year
+	•	Amount (optional)
+	•	Brief description (optional)
+Content: To be migrated from existing Wix grants page during build.
+
+Press (/press)
+Media coverage, podcast appearances, radio/print interviews. Shea is the subject, not the interviewer. Replaces the previous "Interviews" page label.
+Each entry has:
+	•	Headline or show title (linked to external URL)
+	•	Publication/outlet
+	•	Date
+	•	Type tag: Print/Online | Podcast | Radio
+Optional light categorization by type if list grows long — not needed at launch.
+Content: To be migrated from existing Wix interviews page during build.
+
+Blog (/blog)
+Personal essays and reflections. Markdown files. Existing posts:
+	•	The Future of Research Is Mixed, Messy, and Human — Jul 22, 2025
+	•	No Comfort But Truth — Dec 18, 2024
+	•	Reflections on Leaving Librarianship — May 2, 2023
+	•	Cheating Doesn't Matter — Nov 9, 2021
+Tags used: Research, Academia, Education, Ethics, Libraries, Career, Proctoring
+Blog posts live in src/content/blog/ as .md or .mdx files.
+
+Future Sections (not in v1)
+	•	/research — PhD research, Tableau dashboards, interactive maps, data visualizations
+	•	/cv — Single markdown page, downloadable PDF link
+	•	/teaching — Course syllabi, teaching philosophy
+	•	/newsletter — Buttondown or similar embed
+Content Collections Schema
+Blog post frontmatter
+title: string
+description: string
+date: YYYY-MM-DD
+tags: string[]
+draft: boolean (optional, default false)
+Writing entry frontmatter
+title: string
+venue: string
+year: number
+url: string
+authors: string[] (optional)
+Presentation frontmatter
+title: string
+event: string
+date: YYYY-MM-DD
+video_url: string (optional)
+slides_url: string (optional)
+description: string (optional)
+Press entry frontmatter
+title: string
+outlet: string
+date: YYYY-MM-DD
+url: string
+type: "print" | "podcast" | "radio" | "online"
+Grant frontmatter
+title: string
+funder: string
+year: number
+amount: string (optional)
+description: string (optional)
+Contact
+	•	Email: shea.swauger@ucdenver.edu
+	•	Twitter: @SheaSwauger
+	•	LinkedIn: linkedin.com/in/sheaswauger
+	•	TikTok: @shea_swauger
+Domain Migration (LAST STEP — after site is live on Vercel)
+	1	Turn off Wix auto-renewal
+	2	Transfer sheaswauger.com to Cloudflare (~$10/yr, no markup)
+	3	Point Cloudflare DNS to Vercel
+	4	Verify SSL on Vercel
+	5	Confirm Wix site is fully replaced
+Claude Code Session Instructions
+Session 1: Scaffold
+	•	Use planning mode first
+	•	Clone/init from astro-sphere template
+	•	Remove: Starfield, Globe, typewriter components
+	•	Update: consts.ts with Shea's info
+	•	Set up content collections for all 5 content types
+	•	Verify dev server runs clean
+Session 2: Homepage
+	•	Build hero section (no animations)
+	•	Two-column recent posts + recent writing
+	•	Footer with correct links
+Session 3: Writing page
+	•	List layout, sorted by year desc
+	•	Populate all entries from this spec
+Session 4: Presentations page
+	•	List layout with conditional video embed
+	•	Populate from Wix page
+Session 5: Grants + Press pages
+	•	Same list pattern
+	•	Populate from Wix pages
+Session 6: Blog
+	•	Migrate 4 existing posts as markdown
+	•	Verify tags, dates, slugs
+Session 7: Polish + deploy
+	•	Light/dark mode check
+	•	Mobile responsive check
+	•	Deploy to Vercel
+	•	Custom domain setup
