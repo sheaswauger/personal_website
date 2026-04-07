@@ -118,7 +118,7 @@ const writing = (await getCollection("writing"))
     <p class="text-white text-5xl md:text-6xl font-bold text-center max-w-2xl px-8">
       You're doing a good job and things are gonna be ok.
     </p>
-    <p class="text-sm italic text-white/50 mt-4 text-center">(except you, Kevin. You know what you did.)</p>
+    <p class="text-sm italic text-white/50 mt-4 text-center">(Except you, Kevin. You know what you did.)</p>
   </div>
 </div>
 
@@ -160,22 +160,22 @@ const writing = (await getCollection("writing"))
       });
     });
 
-    // Continuous confetti every 200ms, stop firing at 3500ms
+    // Continuous confetti every 200ms, stop firing at 4500ms
     fireBurst();
     confettiInterval = setInterval(fireBurst, 200);
 
-    // At 3500ms: stop new bursts and begin fade
+    // At 4500ms: stop new bursts and begin fade
     fadeTimer = setTimeout(function () {
       clearInterval(confettiInterval);
       confettiInterval = null;
       overlay.style.transition = 'opacity 500ms';
       overlay.style.opacity = '0';
-    }, 3500);
+    }, 4500);
 
-    // At 4000ms: hide and clean up
+    // At 5000ms: hide and clean up
     dismissTimer = setTimeout(function () {
       hideOverlay();
-    }, 4000);
+    }, 5000);
   }
 
   function clearAllTimers() {
