@@ -105,7 +105,7 @@ const writing = (await getCollection("writing"))
             </ul>
 
             <!-- Snake game -->
-            <div class="mt-8 inline-block">
+            <div class="mt-4 inline-block">
               <!-- Nokia bezel -->
               <div style="background:#2a2a2a;border-radius:8px;padding:10px 12px 8px;border:2px solid #1a1a1a;display:inline-block;">
                 <!-- Score bar inside bezel -->
@@ -122,7 +122,7 @@ const writing = (await getCollection("writing"))
                   <div style="position:absolute;inset:0;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);pointer-events:none;"></div>
                 </div>
               </div>
-              <p class="text-xs text-white/20 text-center mt-2">arrow keys to play</p>
+              <p class="text-xs text-white/20 text-center mt-2">arrow keys or swipe to play</p>
             </div>
           </div>
         </section>
@@ -470,6 +470,37 @@ const writing = (await getCollection("writing"))
     var d = map[e.key];
     if (!d) return;
     e.preventDefault();
+    getAudioCtx();
+    if (!started) {
+      start();
+      nextDir = d;
+      dir = d;
+      return;
+    }
+    if (d.x === -dir.x && d.y === -dir.y) return;
+    nextDir = d;
+  });
+
+  // Touch / swipe controls
+  var touchStartX = 0, touchStartY = 0;
+  canvas.addEventListener('touchstart', function (e) {
+    e.preventDefault();
+    touchStartX = e.changedTouches[0].clientX;
+    touchStartY = e.changedTouches[0].clientY;
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', function (e) {
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+    var d = null;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (dx > 30)  d = { x: 1,  y: 0 };
+      if (dx < -30) d = { x: -1, y: 0 };
+    } else {
+      if (dy > 30)  d = { x: 0,  y: 1 };
+      if (dy < -30) d = { x: 0,  y: -1 };
+    }
+    if (!d) return;
     getAudioCtx();
     if (!started) {
       start();
