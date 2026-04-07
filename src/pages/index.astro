@@ -34,6 +34,9 @@ const writing = (await getCollection("writing"))
             <a href="/presentations" class="py-2 px-4 truncate rounded text-xs md:text-sm lg:text-base border border-black dark:border-white hover:bg-black/5 hover:dark:bg-white/15 blend">
               View presentations
             </a>
+            <button id="veryImportantBtn" class="py-2 px-4 truncate rounded text-xs md:text-sm lg:text-base border border-black dark:border-white hover:bg-black/5 hover:dark:bg-white/15 blend cursor-pointer">
+              Very Important
+            </button>
           </div>
         </div>
       </div>
@@ -112,5 +115,31 @@ const writing = (await getCollection("writing"))
       </div>
     </div>
   </div>
+
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script is:inline>
+  const btn = document.getElementById('veryImportantBtn');
+  let resetTimer = null;
+
+  btn.addEventListener('click', function () {
+    btn.textContent = "You're doing a good job and things are gonna be ok.";
+
+    confetti({
+      particleCount: 40,
+      spread: 55,
+      startVelocity: 22,
+      scalar: 0.7,
+      ticks: 180,
+      origin: { y: 0.45 },
+      colors: ['#a8edea', '#fed6e3', '#f9ca24', '#6ab04c', '#e056fd']
+    });
+
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(function () {
+      btn.textContent = 'Very Important';
+    }, 3000);
+  });
+</script>
 
 </PageLayout>
