@@ -48,8 +48,8 @@ function formatDate(date: Date) {
             <span class="text-sm opacity-60">
               {entry.data.outlet} &middot; {formatDate(entry.data.date)}
             </span>
-            <span class="text-xs uppercase px-2 py-0.5 rounded bg-black/5 dark:bg-white/20 text-black/60 dark:text-white/60">
-              {entry.data.type}
+            <span class="text-xs font-medium px-2 py-0.5 rounded-full border border-black/20 dark:border-white/20">
+              {entry.data.type === 'print' ? 'Print' : entry.data.type === 'podcast' ? 'Podcast' : entry.data.type === 'radio' ? 'Radio' : 'Online'}
             </span>
           </div>
         </li>

@@ -41,15 +41,15 @@ const presentations = (await getCollection("presentations"))
             </div>
           )}
           {(entry.data.video_url || entry.data.slides_url) && (
-            <div class="flex flex-wrap gap-3 mt-2">
+            <div class="flex flex-wrap gap-2 mt-2">
               {entry.data.video_url && (
                 <a
                   href={entry.data.video_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-sm underline decoration-[.5px] underline-offset-2 hover:opacity-100 opacity-75 blend"
+                  class="text-xs font-medium px-2 py-0.5 rounded-full border border-black/20 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/10 transition-colors duration-300 ease-in-out"
                 >
-                  Watch recording →
+                  Video
                 </a>
               )}
               {entry.data.slides_url && (
@@ -57,9 +57,9 @@ const presentations = (await getCollection("presentations"))
                   href={entry.data.slides_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="text-sm underline decoration-[.5px] underline-offset-2 hover:opacity-100 opacity-75 blend"
+                  class="text-xs font-medium px-2 py-0.5 rounded-full border border-black/20 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/10 transition-colors duration-300 ease-in-out"
                 >
-                  View slides →
+                  Slides
                 </a>
               )}
             </div>

@@ -5,7 +5,16 @@ import TopLayout from "@layouts/TopLayout.astro"
 import BottomLayout from "@layouts/BottomLayout.astro"
 import { WRITING } from "@consts"
 
-const writing = (await getCollection("writing"))
+const journalismVenues = ["Washington Post", "MIT Technology Review", "Hybrid Pedagogy", "Othering and Belonging", "CSCW", "UC3"]
+
+const allWriting = await getCollection("writing")
+
+const journalismWriting = allWriting
+  .filter(e => journalismVenues.some(v => e.data.venue.includes(v)))
+  .sort((a, b) => b.data.year - a.data.year)
+
+const academicWriting = allWriting
+  .filter(e => !journalismVenues.some(v => e.data.venue.includes(v)))
   .sort((a, b) => b.data.year - a.data.year)
 ---
 
@@ -21,29 +30,64 @@ const writing = (await getCollection("writing"))
     </div>
   </TopLayout>
   <BottomLayout>
-    <ul class="animate divide-y divide-black/10 dark:divide-white/10">
-      {writing.map((entry) => (
-        <li class="py-4">
-          <a
-            href={entry.data.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="group block"
-          >
-            <div class="font-medium text-black dark:text-white group-hover:underline decoration-[.5px] underline-offset-2 blend">
-              {entry.data.title}
-            </div>
-          </a>
-          <div class="text-sm opacity-60 mt-0.5">
-            {entry.data.venue} &middot; {entry.data.year}
-          </div>
-          {entry.data.authors && entry.data.authors.length > 0 && (
-            <div class="text-sm opacity-50 italic mt-0.5">
-              {entry.data.authors.join(", ")}
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
+    <div class="animate space-y-12">
+
+      <section>
+        <h2 class="text-xl font-semibold text-black dark:text-white mb-4">Academic Writing</h2>
+        <ul class="divide-y divide-black/10 dark:divide-white/10">
+          {academicWriting.map((entry) => (
+            <li class="py-4">
+              <a
+                href={entry.data.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group block"
+              >
+                <div class="font-medium text-black dark:text-white group-hover:underline decoration-[.5px] underline-offset-2 blend">
+                  {entry.data.title}
+                </div>
+              </a>
+              <div class="text-sm opacity-60 mt-0.5">
+                {entry.data.venue} &middot; {entry.data.year}
+              </div>
+              {entry.data.authors && entry.data.authors.length > 0 && (
+                <div class="text-sm opacity-50 italic mt-0.5">
+                  {entry.data.authors.join(", ")}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 class="text-xl font-semibold text-black dark:text-white mb-4">Journalism</h2>
+        <ul class="divide-y divide-black/10 dark:divide-white/10">
+          {journalismWriting.map((entry) => (
+            <li class="py-4">
+              <a
+                href={entry.data.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="group block"
+              >
+                <div class="font-medium text-black dark:text-white group-hover:underline decoration-[.5px] underline-offset-2 blend">
+                  {entry.data.title}
+                </div>
+              </a>
+              <div class="text-sm opacity-60 mt-0.5">
+                {entry.data.venue} &middot; {entry.data.year}
+              </div>
+              {entry.data.authors && entry.data.authors.length > 0 && (
+                <div class="text-sm opacity-50 italic mt-0.5">
+                  {entry.data.authors.join(", ")}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+    </div>
   </BottomLayout>
 </PageLayout>

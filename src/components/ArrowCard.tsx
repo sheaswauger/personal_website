@@ -1,4 +1,4 @@
-import { formatDate, truncateText } from "@lib/utils"
+import { formatDate, readingTime, truncateText } from "@lib/utils"
 import type { CollectionEntry } from "astro:content"
 
 type Props = {
@@ -19,6 +19,9 @@ export default function ArrowCard({ entry, pill }: Props) {
           <div class="text-sm uppercase">
             {formatDate(entry.data.date)}
           </div>
+          <div class="text-sm opacity-60">
+            {readingTime(entry.body)}
+          </div>
         </div>
         <div class="font-semibold mt-3 text-black dark:text-white line-clamp-2">
           {entry.data.title}
@@ -29,7 +32,7 @@ export default function ArrowCard({ entry, pill }: Props) {
         </div>
         <ul class="flex flex-wrap mt-2 gap-1">
           {entry.data.tags.map((tag: string) => ( // this line has an error; Parameter 'tag' implicitly has an 'any' type.ts(7006)
-            <li class="text-xs uppercase py-0.5 px-2 rounded bg-black/5 dark:bg-white/20 text-black/75 dark:text-white/75">
+            <li class="text-xs font-medium px-2 py-0.5 rounded-full border border-black/20 dark:border-white/20">
               {truncateText(tag, 20)}
             </li>
           ))}
