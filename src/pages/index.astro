@@ -71,9 +71,9 @@ const writing = (await getCollection("writing"))
           </div>
         </section>
 
-        <!-- Right: Recent Writing -->
+        <!-- Right: Recent Writing + Snake -->
         <section class="animate">
-          <div class="space-y-4">
+          <div class="flex flex-col space-y-4">
             <div class="flex justify-between items-baseline">
               <p class="font-semibold text-black dark:text-white">
                 Recent Writing
@@ -105,7 +105,7 @@ const writing = (await getCollection("writing"))
             </ul>
 
             <!-- Snake game -->
-            <div class="mt-4 inline-block">
+            <div class="flex-1 inline-block">
               <!-- Nokia bezel -->
               <div style="background:#2a2a2a;border-radius:8px;padding:10px 12px 8px;border:2px solid #1a1a1a;display:inline-block;">
                 <!-- Score bar inside bezel -->
@@ -116,9 +116,20 @@ const writing = (await getCollection("writing"))
                     <span id="snake-best">best: 0</span>
                   </span>
                 </div>
-                <!-- Canvas + scanline overlay -->
+                <!-- Canvas + demo overlay + scanlines -->
                 <div style="position:relative;display:block;">
-                  <canvas id="snake-canvas" width="420" height="300" style="display:block;"></canvas>
+                  <canvas id="snake-canvas" width="420" height="340" style="display:block;"></canvas>
+                  <!-- Demo overlay (removed by JS on first input) -->
+                  <div id="snake-demo-overlay" style="position:absolute;inset:0;background:rgba(26,42,10,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+                    <span style="font-family:monospace;color:#8a9e2a;font-size:22px;font-weight:bold;letter-spacing:4px;">SNAKE</span>
+                    <span style="display:block;height:10px;"></span>
+                    <span style="font-family:monospace;color:#8a9e2a;font-size:13px;">a game from 1997.</span>
+                    <span style="font-family:monospace;color:#8a9e2a;font-size:13px;">you'll figure it out.</span>
+                    <span style="display:block;height:10px;"></span>
+                    <span style="font-family:monospace;color:#6a7e1a;font-size:12px;">press any arrow to play</span>
+                    <span id="snake-swipe-hint" style="font-family:monospace;color:#6a7e1a;font-size:12px;display:none;">or swipe to play</span>
+                  </div>
+                  <!-- Scanlines -->
                   <div style="position:absolute;inset:0;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);pointer-events:none;"></div>
                 </div>
               </div>
@@ -224,8 +235,8 @@ const writing = (await getCollection("writing"))
 
 <script is:inline>
 (function () {
-  var CELL = 20, COLS = 21, ROWS = 15;
-  var W = COLS * CELL, H = ROWS * CELL; // 420x300
+  var CELL = 20, COLS = 21, ROWS = 17;
+  var W = COLS * CELL, H = ROWS * CELL; // 420x340
   var BASE_SPEED = 180, MIN_SPEED = 80, SPEED_STEP = 10, APPLES_PER_TIER = 3, MAX_TIERS = 5;
   var LCD_BG = '#8a9e2a', LCD_FG = '#1a2a0a';
 
@@ -234,254 +245,266 @@ const writing = (await getCollection("writing"))
   var scoreEl = document.getElementById('snake-score');
   var bestEl = document.getElementById('snake-best');
   var dotsEl = document.getElementById('snake-speed-dots');
+  var overlay = document.getElementById('snake-demo-overlay');
+  var swipeHint = document.getElementById('snake-swipe-hint');
 
-  var snake, dir, nextDir, food, score, loop, started, dead;
-  var interval, foodPulseRaf, audioCtx;
+  // Show swipe hint on touch devices
+  if ('ontouchstart' in window) swipeHint.style.display = '';
+
+  var state = 'demo'; // 'demo' | 'playing' | 'dead'
+  var snake, dir, nextDir, food, score, loop, foodPulseRaf, audioCtx;
+  var interval;
 
   var highScore = parseInt(localStorage.getItem('snake-high-score') || '0', 10);
   bestEl.textContent = 'best: ' + highScore;
 
+  // ── Audio ──────────────────────────────────────────────────────────────
   function getAudioCtx() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     return audioCtx;
   }
-
   function playEat() {
     try {
-      var ac = getAudioCtx();
-      var osc = ac.createOscillator();
-      var gain = ac.createGain();
-      osc.connect(gain); gain.connect(ac.destination);
+      var ac = getAudioCtx(), osc = ac.createOscillator(), g = ac.createGain();
+      osc.connect(g); g.connect(ac.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(220, ac.currentTime);
       osc.frequency.linearRampToValueAtTime(440, ac.currentTime + 0.08);
-      gain.gain.setValueAtTime(0.15, ac.currentTime);
-      gain.gain.linearRampToValueAtTime(0, ac.currentTime + 0.08);
-      osc.start(ac.currentTime);
-      osc.stop(ac.currentTime + 0.08);
+      g.gain.setValueAtTime(0.15, ac.currentTime);
+      g.gain.linearRampToValueAtTime(0, ac.currentTime + 0.08);
+      osc.start(); osc.stop(ac.currentTime + 0.08);
     } catch(e) {}
   }
-
   function playDeath() {
     try {
-      var ac = getAudioCtx();
-      var osc = ac.createOscillator();
-      var gain = ac.createGain();
-      osc.connect(gain); gain.connect(ac.destination);
+      var ac = getAudioCtx(), osc = ac.createOscillator(), g = ac.createGain();
+      osc.connect(g); g.connect(ac.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(440, ac.currentTime);
       osc.frequency.linearRampToValueAtTime(110, ac.currentTime + 0.3);
-      gain.gain.setValueAtTime(0.2, ac.currentTime);
-      gain.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3);
-      osc.start(ac.currentTime);
-      osc.stop(ac.currentTime + 0.3);
+      g.gain.setValueAtTime(0.2, ac.currentTime);
+      g.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3);
+      osc.start(); osc.stop(ac.currentTime + 0.3);
     } catch(e) {}
   }
 
-  function currentTier() {
-    return Math.min(Math.floor(score / APPLES_PER_TIER), MAX_TIERS);
-  }
-
-  function currentInterval() {
-    return Math.max(BASE_SPEED - currentTier() * SPEED_STEP, MIN_SPEED);
-  }
-
+  // ── Speed / dots ───────────────────────────────────────────────────────
+  function currentTier() { return Math.min(Math.floor(score / APPLES_PER_TIER), MAX_TIERS); }
+  function currentInterval() { return Math.max(BASE_SPEED - currentTier() * SPEED_STEP, MIN_SPEED); }
   function updateDots() {
     var tier = currentTier();
     dotsEl.innerHTML = '';
     for (var i = 0; i < MAX_TIERS; i++) {
       var dot = document.createElement('span');
-      dot.style.display = 'inline-block';
-      dot.style.width = '5px';
-      dot.style.height = '5px';
-      dot.style.borderRadius = '50%';
-      dot.style.background = i < tier ? LCD_FG : 'rgba(26,42,10,0.2)';
+      dot.style.cssText = 'display:inline-block;width:5px;height:5px;border-radius:50%;background:' +
+        (i < tier ? LCD_FG : 'rgba(26,42,10,0.2)');
       dotsEl.appendChild(dot);
     }
   }
 
-  function init() {
-    snake = [
-      { x: 12, y: 7 },
-      { x: 11, y: 7 },
-      { x: 10, y: 7 }
-    ];
-    dir = { x: 1, y: 0 };
-    nextDir = { x: 1, y: 0 };
-    food = randomFood();
-    score = 0;
-    dead = false;
-    interval = BASE_SPEED;
-    scoreEl.textContent = 'score: 0';
-    updateDots();
-    if (foodPulseRaf) cancelAnimationFrame(foodPulseRaf);
-    foodPulseRaf = null;
-  }
-
-  function randomFood() {
-    var pos;
-    do {
-      pos = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
-    } while (snake.some(function (s) { return s.x === pos.x && s.y === pos.y; }));
-    return pos;
-  }
-
+  // ── Drawing ────────────────────────────────────────────────────────────
   function drawBoard() {
     ctx.fillStyle = LCD_BG;
     ctx.fillRect(0, 0, W, H);
   }
-
-  function drawFood() {
+  function drawDiamond(cx, cy, size) {
     ctx.fillStyle = LCD_FG;
     ctx.save();
-    ctx.translate(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2);
+    ctx.translate(cx, cy);
     ctx.rotate(Math.PI / 4);
-    ctx.fillRect(-4, -4, 8, 8);
+    ctx.fillRect(-size / 2, -size / 2, size, size);
     ctx.restore();
   }
-
+  function drawFood(size) {
+    drawDiamond(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, size || 8);
+  }
   function drawSnake() {
     var head = snake[0];
     ctx.fillStyle = LCD_FG;
     for (var i = 0; i < snake.length; i++) {
       ctx.fillRect(snake[i].x * CELL + 1, snake[i].y * CELL + 1, CELL - 2, CELL - 2);
     }
-    // Eyes on head: 2x2 white pixels, positioned by direction
     ctx.fillStyle = LCD_BG;
     var hx = head.x * CELL, hy = head.y * CELL;
-    if (dir.x === 1) {        // moving right — eyes on right side
-      ctx.fillRect(hx + CELL - 5, hy + 3, 2, 2);
-      ctx.fillRect(hx + CELL - 5, hy + CELL - 5, 2, 2);
-    } else if (dir.x === -1) { // moving left — eyes on left side
-      ctx.fillRect(hx + 3, hy + 3, 2, 2);
-      ctx.fillRect(hx + 3, hy + CELL - 5, 2, 2);
-    } else if (dir.y === -1) { // moving up — eyes on top
-      ctx.fillRect(hx + 3, hy + 3, 2, 2);
-      ctx.fillRect(hx + CELL - 5, hy + 3, 2, 2);
-    } else {                   // moving down — eyes on bottom
-      ctx.fillRect(hx + 3, hy + CELL - 5, 2, 2);
-      ctx.fillRect(hx + CELL - 5, hy + CELL - 5, 2, 2);
-    }
+    if (dir.x === 1)       { ctx.fillRect(hx+CELL-5, hy+3, 2, 2); ctx.fillRect(hx+CELL-5, hy+CELL-5, 2, 2); }
+    else if (dir.x === -1) { ctx.fillRect(hx+3, hy+3, 2, 2);      ctx.fillRect(hx+3, hy+CELL-5, 2, 2); }
+    else if (dir.y === -1) { ctx.fillRect(hx+3, hy+3, 2, 2);      ctx.fillRect(hx+CELL-5, hy+3, 2, 2); }
+    else                   { ctx.fillRect(hx+3, hy+CELL-5, 2, 2); ctx.fillRect(hx+CELL-5, hy+CELL-5, 2, 2); }
   }
-
-  function draw() {
+  function drawGameOver() {
     drawBoard();
     drawFood();
-    drawSnake();
+    ctx.fillStyle = LCD_FG;
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('game over · press any arrow to restart', W / 2, H / 2);
   }
 
-  // Food pulse via rAF (diamond size oscillation)
+  // ── Food pulse (playing state) ─────────────────────────────────────────
   function startFoodPulse() {
     var start = performance.now();
     function pulse(now) {
-      if (!started) return;
+      if (state !== 'playing') return;
       var t = ((now - start) % 1000) / 1000;
-      var size = 7 + 2 * Math.sin(t * Math.PI * 2); // oscillates 5..9px half-size
+      var size = 7 + 2 * Math.sin(t * Math.PI * 2);
       drawBoard();
-      // Draw pulsing diamond
-      ctx.fillStyle = LCD_FG;
-      ctx.save();
-      ctx.translate(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2);
-      ctx.rotate(Math.PI / 4);
-      ctx.fillRect(-size / 2, -size / 2, size, size);
-      ctx.restore();
+      drawDiamond(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, size);
       drawSnake();
       foodPulseRaf = requestAnimationFrame(pulse);
     }
     foodPulseRaf = requestAnimationFrame(pulse);
   }
 
-  function drawIdle(gameOver) {
-    drawBoard();
-    ctx.fillStyle = LCD_FG;
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(
-      gameOver ? 'game over · press any arrow to restart' : 'press any arrow key to start',
-      W / 2, H / 2
-    );
+  // ── Demo mode ──────────────────────────────────────────────────────────
+  // A scripted path: series of {dir, steps} segments that loop the board
+  var DEMO_PATH = [
+    {x:1,y:0,n:18}, {x:0,y:1,n:4},  {x:-1,y:0,n:18}, {x:0,y:1,n:4},
+    {x:1,y:0,n:18}, {x:0,y:1,n:4},  {x:-1,y:0,n:18}, {x:0,y:-1,n:14},
+    {x:1,y:0,n:10}, {x:0,y:1,n:6},  {x:-1,y:0,n:10}, {x:0,y:-1,n:6}
+  ];
+  var DEMO_FOOD = [{x:10,y:3},{x:5,y:7},{x:14,y:9},{x:3,y:4},{x:17,y:12},{x:8,y:14}];
+  var demoPathIdx = 0, demoStepInSeg = 0, demoFoodIdx = 0;
+
+  function initDemo() {
+    snake = [{x:10,y:8},{x:9,y:8},{x:8,y:8}];
+    dir = {x:1,y:0}; nextDir = {x:1,y:0};
+    demoPathIdx = 0; demoStepInSeg = 0; demoFoodIdx = 0;
+    food = DEMO_FOOD[0];
+    drawBoard(); drawFood(); drawSnake();
+  }
+
+  function demoStep() {
+    var seg = DEMO_PATH[demoPathIdx];
+    dir = {x: seg.x, y: seg.y};
+    var head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+
+    // If about to hit wall or self, silently reset
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS ||
+        snake.some(function(s){ return s.x===head.x && s.y===head.y; })) {
+      initDemo(); return;
+    }
+
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
+      demoFoodIdx = (demoFoodIdx + 1) % DEMO_FOOD.length;
+      food = DEMO_FOOD[demoFoodIdx];
+    } else {
+      snake.pop();
+    }
+
+    demoStepInSeg++;
+    if (demoStepInSeg >= seg.n) {
+      demoStepInSeg = 0;
+      demoPathIdx = (demoPathIdx + 1) % DEMO_PATH.length;
+    }
+
+    drawBoard(); drawFood(); drawSnake();
+  }
+
+  function startDemo() {
+    state = 'demo';
+    initDemo();
+    loop = setInterval(demoStep, 200);
+  }
+
+  // ── Real game ──────────────────────────────────────────────────────────
+  function randomFood() {
+    var pos;
+    do { pos = {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)}; }
+    while (snake.some(function(s){ return s.x===pos.x && s.y===pos.y; }));
+    return pos;
+  }
+
+  function initGame() {
+    snake = [{x:12,y:8},{x:11,y:8},{x:10,y:8}];
+    dir = {x:1,y:0}; nextDir = {x:1,y:0};
+    food = randomFood();
+    score = 0; interval = BASE_SPEED;
+    scoreEl.textContent = 'score: 0';
+    updateDots();
+    if (foodPulseRaf) { cancelAnimationFrame(foodPulseRaf); foodPulseRaf = null; }
   }
 
   function scheduleLoop() {
     clearInterval(loop);
     loop = setInterval(function () {
-      step();
-      var newInterval = currentInterval();
-      if (newInterval !== interval) {
-        interval = newInterval;
-        scheduleLoop();
-      }
+      gameStep();
+      var ni = currentInterval();
+      if (ni !== interval) { interval = ni; scheduleLoop(); }
     }, interval);
   }
 
-  function step() {
+  function gameStep() {
     dir = nextDir;
-    var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-
-    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return gameOver();
-    if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) return gameOver();
-
+    var head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return doGameOver();
+    if (snake.some(function(s){ return s.x===head.x && s.y===head.y; })) return doGameOver();
     snake.unshift(head);
-
     if (head.x === food.x && head.y === food.y) {
       score++;
       scoreEl.textContent = 'score: ' + score;
       updateDots();
       food = randomFood();
       playEat();
-    } else {
-      snake.pop();
-    }
+    } else { snake.pop(); }
   }
 
-  function gameOver() {
+  function doGameOver() {
     clearInterval(loop);
     if (foodPulseRaf) { cancelAnimationFrame(foodPulseRaf); foodPulseRaf = null; }
     playDeath();
-    dead = true;
-    started = false;
-
+    state = 'dead';
     if (score > highScore) {
       highScore = score;
       localStorage.setItem('snake-high-score', highScore);
       bestEl.textContent = 'best: ' + highScore;
     }
-
-    drawIdle(true);
+    drawGameOver();
   }
 
-  function start() {
-    if (started) return;
-    init();
-    started = true;
-    interval = BASE_SPEED;
+  // ── Dismiss overlay + start real game ─────────────────────────────────
+  function beginPlaying(d) {
+    if (state === 'playing') return;
+    clearInterval(loop);
+
+    if (overlay) {
+      overlay.style.transition = 'opacity 200ms';
+      overlay.style.opacity = '0';
+      setTimeout(function(){ if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 220);
+    }
+
+    state = 'playing';
+    initGame();
+    dir = d; nextDir = d;
     scheduleLoop();
     startFoodPulse();
   }
 
+  // ── Input handling ─────────────────────────────────────────────────────
+  var DIR_MAP = {
+    ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1},
+    ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0}
+  };
+
   document.addEventListener('keydown', function (e) {
-    var map = {
-      ArrowUp:    { x: 0,  y: -1 },
-      ArrowDown:  { x: 0,  y:  1 },
-      ArrowLeft:  { x: -1, y:  0 },
-      ArrowRight: { x: 1,  y:  0 }
-    };
-    var d = map[e.key];
+    var d = DIR_MAP[e.key];
     if (!d) return;
     e.preventDefault();
     getAudioCtx();
-    if (!started) {
-      start();
-      nextDir = d;
-      dir = d;
+    if (state === 'demo') { beginPlaying(d); return; }
+    if (state === 'dead') {
+      state = 'playing';
+      initGame();
+      dir = d; nextDir = d;
+      scheduleLoop();
+      startFoodPulse();
       return;
     }
     if (d.x === -dir.x && d.y === -dir.y) return;
     nextDir = d;
   });
 
-  // Touch / swipe controls
   var touchStartX = 0, touchStartY = 0;
   canvas.addEventListener('touchstart', function (e) {
     e.preventDefault();
@@ -494,32 +517,30 @@ const writing = (await getCollection("writing"))
     var dy = e.changedTouches[0].clientY - touchStartY;
     var d = null;
     if (Math.abs(dx) > Math.abs(dy)) {
-      if (dx > 30)  d = { x: 1,  y: 0 };
-      if (dx < -30) d = { x: -1, y: 0 };
+      if (dx > 30)  d = {x:1,y:0};
+      if (dx < -30) d = {x:-1,y:0};
     } else {
-      if (dy > 30)  d = { x: 0,  y: 1 };
-      if (dy < -30) d = { x: 0,  y: -1 };
+      if (dy > 30)  d = {x:0,y:1};
+      if (dy < -30) d = {x:0,y:-1};
     }
     if (!d) return;
     getAudioCtx();
-    if (!started) {
-      start();
-      nextDir = d;
-      dir = d;
+    if (state === 'demo') { beginPlaying(d); return; }
+    if (state === 'dead') {
+      state = 'playing';
+      initGame();
+      dir = d; nextDir = d;
+      scheduleLoop();
+      startFoodPulse();
       return;
     }
     if (d.x === -dir.x && d.y === -dir.y) return;
     nextDir = d;
   });
 
-  // Initial idle draw
-  started = false;
-  dead = false;
-  snake = [{ x: 12, y: 7 }, { x: 11, y: 7 }, { x: 10, y: 7 }];
-  dir = { x: 1, y: 0 };
-  nextDir = { x: 1, y: 0 };
+  // ── Boot ───────────────────────────────────────────────────────────────
   updateDots();
-  drawIdle(false);
+  startDemo();
 })();
 </script>
 
