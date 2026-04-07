@@ -107,11 +107,16 @@ const writing = (await getCollection("writing"))
             <!-- Snake game -->
             <div class="mt-8">
               <div class="flex justify-between items-baseline mb-2">
-                <span class="text-xs text-black/30 dark:text-white/30">need a break?</span>
-                <span id="snake-score" class="text-xs text-black/30 dark:text-white/30">score: 0</span>
+                <span id="snake-best" class="text-xs text-black/30 dark:text-white/30">best: 0</span>
+                <div class="flex items-center gap-2">
+                  <span id="snake-speed-dots" class="flex gap-0.5"></span>
+                  <span id="snake-score" class="text-xs text-black/30 dark:text-white/30">score: 0</span>
+                </div>
               </div>
-              <canvas id="snake-canvas" width="280" height="200" class="border border-black/10 dark:border-white/10 block"></canvas>
-              <p id="snake-hint" class="text-xs text-black/30 dark:text-white/30 text-center mt-1">click to start</p>
+              <div class="border border-white/15 rounded-lg p-3 inline-block">
+                <canvas id="snake-canvas" width="420" height="300" class="block"></canvas>
+              </div>
+              <p class="text-xs text-white/20 text-center mt-2">arrow keys to play</p>
             </div>
           </div>
         </section>
@@ -213,34 +218,101 @@ const writing = (await getCollection("writing"))
 
 <script is:inline>
 (function () {
-  var CELL = 20, COLS = 14, ROWS = 10;
-  var W = COLS * CELL, H = ROWS * CELL; // 280x200
+  var CELL = 20, COLS = 21, ROWS = 15;
+  var W = COLS * CELL, H = ROWS * CELL; // 420x300
+  var BASE_SPEED = 180, MIN_SPEED = 80, SPEED_STEP = 10, APPLES_PER_TIER = 3, MAX_TIERS = 5;
 
   var canvas = document.getElementById('snake-canvas');
   var ctx = canvas.getContext('2d');
   var scoreEl = document.getElementById('snake-score');
-  var hintEl = document.getElementById('snake-hint');
+  var bestEl = document.getElementById('snake-best');
+  var dotsEl = document.getElementById('snake-speed-dots');
 
   var snake, dir, nextDir, food, score, loop, started, dead;
+  var interval, foodPulseRaf, audioCtx;
+
+  var highScore = parseInt(localStorage.getItem('snake-high-score') || '0', 10);
+  bestEl.textContent = 'best: ' + highScore;
 
   function isDark() {
     return document.documentElement.classList.contains('dark');
   }
 
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playEat() {
+    try {
+      var ac = getAudioCtx();
+      var osc = ac.createOscillator();
+      var gain = ac.createGain();
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, ac.currentTime);
+      osc.frequency.linearRampToValueAtTime(440, ac.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.15, ac.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ac.currentTime + 0.08);
+      osc.start(ac.currentTime);
+      osc.stop(ac.currentTime + 0.08);
+    } catch(e) {}
+  }
+
+  function playDeath() {
+    try {
+      var ac = getAudioCtx();
+      var osc = ac.createOscillator();
+      var gain = ac.createGain();
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, ac.currentTime);
+      osc.frequency.linearRampToValueAtTime(110, ac.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.2, ac.currentTime);
+      gain.gain.linearRampToValueAtTime(0, ac.currentTime + 0.3);
+      osc.start(ac.currentTime);
+      osc.stop(ac.currentTime + 0.3);
+    } catch(e) {}
+  }
+
+  function currentTier() {
+    return Math.min(Math.floor(score / APPLES_PER_TIER), MAX_TIERS);
+  }
+
+  function currentInterval() {
+    return Math.max(BASE_SPEED - currentTier() * SPEED_STEP, MIN_SPEED);
+  }
+
+  function updateDots() {
+    var tier = currentTier();
+    dotsEl.innerHTML = '';
+    for (var i = 0; i < MAX_TIERS; i++) {
+      var dot = document.createElement('span');
+      dot.style.display = 'inline-block';
+      dot.style.width = '5px';
+      dot.style.height = '5px';
+      dot.style.borderRadius = '50%';
+      dot.style.background = i < tier ? 'rgba(224,90,58,0.6)' : 'rgba(128,128,128,0.2)';
+      dotsEl.appendChild(dot);
+    }
+  }
+
   function init() {
     snake = [
-      { x: 8, y: 5 },
-      { x: 7, y: 5 },
-      { x: 6, y: 5 }
+      { x: 12, y: 7 },
+      { x: 11, y: 7 },
+      { x: 10, y: 7 }
     ];
     dir = { x: 1, y: 0 };
     nextDir = { x: 1, y: 0 };
     food = randomFood();
     score = 0;
     dead = false;
+    interval = BASE_SPEED;
     scoreEl.textContent = 'score: 0';
-    hintEl.textContent = '';
-    drawIdle(false);
+    updateDots();
+    if (foodPulseRaf) cancelAnimationFrame(foodPulseRaf);
+    foodPulseRaf = null;
   }
 
   function randomFood() {
@@ -251,23 +323,28 @@ const writing = (await getCollection("writing"))
     return pos;
   }
 
-  function drawBoard() {
+  function drawBoard(flashRed) {
     var dark = isDark();
     for (var row = 0; row < ROWS; row++) {
       for (var col = 0; col < COLS; col++) {
         var checker = (row + col) % 2 === 0;
-        ctx.fillStyle = dark
-          ? (checker ? '#0a0a0a' : '#111111')
-          : (checker ? '#f9f9f9' : '#f2f2f2');
+        if (flashRed) {
+          ctx.fillStyle = checker ? '#5a0a0a' : '#6b1010';
+        } else {
+          ctx.fillStyle = dark
+            ? (checker ? '#0a0a0a' : '#111111')
+            : (checker ? '#f9f9f9' : '#f2f2f2');
+        }
         ctx.fillRect(col * CELL, row * CELL, CELL, CELL);
       }
     }
   }
 
-  function drawFood() {
+  function drawFood(radius) {
+    var r = (radius !== undefined) ? radius : CELL / 2 - 2;
     ctx.fillStyle = '#e05a3a';
     ctx.beginPath();
-    ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 2, 0, Math.PI * 2);
+    ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, r, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -275,9 +352,7 @@ const writing = (await getCollection("writing"))
     var dark = isDark();
     for (var i = 0; i < snake.length; i++) {
       var t = i / Math.max(snake.length - 1, 1);
-      var alpha = dark
-        ? (1 - t * 0.7)
-        : (1 - t * 0.65);
+      var alpha = dark ? (1 - t * 0.7) : (1 - t * 0.65);
       ctx.fillStyle = dark
         ? 'rgba(220,220,220,' + alpha + ')'
         : 'rgba(30,30,30,' + alpha + ')';
@@ -285,65 +360,116 @@ const writing = (await getCollection("writing"))
     }
   }
 
-  function draw() {
-    drawBoard();
-    drawFood();
+  function draw(foodRadius) {
+    drawBoard(false);
+    drawFood(foodRadius);
     drawSnake();
   }
 
-  function drawIdle(showGameOver) {
-    drawBoard();
+  // Food pulse via rAF
+  function startFoodPulse() {
+    var start = performance.now();
+    function pulse(now) {
+      if (!started) return;
+      var t = ((now - start) % 1000) / 1000; // 0..1 over 1s
+      var r = (CELL / 2 - 3) + 2 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
+      draw(r);
+      foodPulseRaf = requestAnimationFrame(pulse);
+    }
+    foodPulseRaf = requestAnimationFrame(pulse);
+  }
+
+  function drawIdle(gameOver) {
+    drawBoard(false);
     var dark = isDark();
     ctx.fillStyle = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)';
     ctx.font = '13px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(showGameOver ? 'game over' : 'click to start', W / 2, H / 2);
+    ctx.fillText(
+      gameOver ? 'game over · press any arrow to restart' : 'press any arrow key to start',
+      W / 2, H / 2
+    );
+  }
+
+  function scheduleLoop() {
+    clearInterval(loop);
+    loop = setInterval(function () {
+      step();
+      // Restart interval if speed tier changed
+      var newInterval = currentInterval();
+      if (newInterval !== interval) {
+        interval = newInterval;
+        scheduleLoop();
+      }
+    }, interval);
   }
 
   function step() {
     dir = nextDir;
     var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-    // Wall collision
-    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
-      return gameOver();
-    }
-    // Self collision
-    if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) {
-      return gameOver();
-    }
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return gameOver();
+    if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) return gameOver();
 
     snake.unshift(head);
 
     if (head.x === food.x && head.y === food.y) {
       score++;
       scoreEl.textContent = 'score: ' + score;
+      updateDots();
       food = randomFood();
+      playEat();
     } else {
       snake.pop();
     }
+  }
 
-    draw();
+  function flashAndGameOver() {
+    clearInterval(loop);
+    if (foodPulseRaf) { cancelAnimationFrame(foodPulseRaf); foodPulseRaf = null; }
+    playDeath();
+
+    var flashes = 0;
+    function doFlash() {
+      drawBoard(flashes % 2 === 0);
+      drawSnake();
+      flashes++;
+      if (flashes < 6) {
+        setTimeout(doFlash, 50);
+      } else {
+        finishGameOver();
+      }
+    }
+    doFlash();
+  }
+
+  function finishGameOver() {
+    dead = true;
+    started = false;
+
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem('snake-high-score', highScore);
+      bestEl.textContent = 'best: ' + highScore;
+    }
+
+    drawIdle(true);
   }
 
   function gameOver() {
-    dead = true;
-    started = false;
-    clearInterval(loop);
-    drawIdle(true);
-    hintEl.textContent = 'game over · click to restart';
+    flashAndGameOver();
   }
 
   function start() {
     if (started) return;
     init();
     started = true;
-    hintEl.textContent = '';
-    loop = setInterval(step, 130);
+    interval = BASE_SPEED;
+    scheduleLoop();
+    startFoodPulse();
   }
 
-  // Controls
   document.addEventListener('keydown', function (e) {
     var map = {
       ArrowUp:    { x: 0,  y: -1 },
@@ -353,24 +479,26 @@ const writing = (await getCollection("writing"))
     };
     var d = map[e.key];
     if (!d) return;
+    e.preventDefault();
+    getAudioCtx(); // unlock audio on first keypress
+    if (!started) {
+      start();
+      nextDir = d;
+      dir = d;
+      return;
+    }
     // Prevent reversing
     if (d.x === -dir.x && d.y === -dir.y) return;
-    if (started) {
-      e.preventDefault();
-      nextDir = d;
-    }
+    nextDir = d;
   });
 
-  canvas.addEventListener('click', function () {
-    if (!started) start();
-  });
-
-  // Initial idle screen
+  // Initial idle draw
   started = false;
   dead = false;
-  snake = [{ x: 8, y: 5 }, { x: 7, y: 5 }, { x: 6, y: 5 }];
+  snake = [{ x: 12, y: 7 }, { x: 11, y: 7 }, { x: 10, y: 7 }];
   dir = { x: 1, y: 0 };
   nextDir = { x: 1, y: 0 };
+  updateDots();
   drawIdle(false);
 })();
 </script>
