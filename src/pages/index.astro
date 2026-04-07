@@ -103,6 +103,16 @@ const writing = (await getCollection("writing"))
                 </li>
               ))}
             </ul>
+
+            <!-- Snake game -->
+            <div class="mt-8">
+              <div class="flex justify-between items-baseline mb-2">
+                <span class="text-xs text-black/30 dark:text-white/30">need a break?</span>
+                <span id="snake-score" class="text-xs text-black/30 dark:text-white/30">score: 0</span>
+              </div>
+              <canvas id="snake-canvas" width="280" height="200" class="border border-black/10 dark:border-white/10 block"></canvas>
+              <p id="snake-hint" class="text-xs text-black/30 dark:text-white/30 text-center mt-1">click to start</p>
+            </div>
           </div>
         </section>
 
@@ -199,6 +209,170 @@ const writing = (await getCollection("writing"))
 
   btn.addEventListener('click', showOverlay);
   closeBtn.addEventListener('click', hideOverlay);
+</script>
+
+<script is:inline>
+(function () {
+  var CELL = 20, COLS = 14, ROWS = 10;
+  var W = COLS * CELL, H = ROWS * CELL; // 280x200
+
+  var canvas = document.getElementById('snake-canvas');
+  var ctx = canvas.getContext('2d');
+  var scoreEl = document.getElementById('snake-score');
+  var hintEl = document.getElementById('snake-hint');
+
+  var snake, dir, nextDir, food, score, loop, started, dead;
+
+  function isDark() {
+    return document.documentElement.classList.contains('dark');
+  }
+
+  function init() {
+    snake = [
+      { x: 8, y: 5 },
+      { x: 7, y: 5 },
+      { x: 6, y: 5 }
+    ];
+    dir = { x: 1, y: 0 };
+    nextDir = { x: 1, y: 0 };
+    food = randomFood();
+    score = 0;
+    dead = false;
+    scoreEl.textContent = 'score: 0';
+    hintEl.textContent = '';
+    drawIdle(false);
+  }
+
+  function randomFood() {
+    var pos;
+    do {
+      pos = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+    } while (snake.some(function (s) { return s.x === pos.x && s.y === pos.y; }));
+    return pos;
+  }
+
+  function drawBoard() {
+    var dark = isDark();
+    for (var row = 0; row < ROWS; row++) {
+      for (var col = 0; col < COLS; col++) {
+        var checker = (row + col) % 2 === 0;
+        ctx.fillStyle = dark
+          ? (checker ? '#0a0a0a' : '#111111')
+          : (checker ? '#f9f9f9' : '#f2f2f2');
+        ctx.fillRect(col * CELL, row * CELL, CELL, CELL);
+      }
+    }
+  }
+
+  function drawFood() {
+    ctx.fillStyle = '#e05a3a';
+    ctx.beginPath();
+    ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL / 2 - 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawSnake() {
+    var dark = isDark();
+    for (var i = 0; i < snake.length; i++) {
+      var t = i / Math.max(snake.length - 1, 1);
+      var alpha = dark
+        ? (1 - t * 0.7)
+        : (1 - t * 0.65);
+      ctx.fillStyle = dark
+        ? 'rgba(220,220,220,' + alpha + ')'
+        : 'rgba(30,30,30,' + alpha + ')';
+      ctx.fillRect(snake[i].x * CELL + 1, snake[i].y * CELL + 1, CELL - 2, CELL - 2);
+    }
+  }
+
+  function draw() {
+    drawBoard();
+    drawFood();
+    drawSnake();
+  }
+
+  function drawIdle(showGameOver) {
+    drawBoard();
+    var dark = isDark();
+    ctx.fillStyle = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)';
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(showGameOver ? 'game over' : 'click to start', W / 2, H / 2);
+  }
+
+  function step() {
+    dir = nextDir;
+    var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    // Wall collision
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+      return gameOver();
+    }
+    // Self collision
+    if (snake.some(function (s) { return s.x === head.x && s.y === head.y; })) {
+      return gameOver();
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+      score++;
+      scoreEl.textContent = 'score: ' + score;
+      food = randomFood();
+    } else {
+      snake.pop();
+    }
+
+    draw();
+  }
+
+  function gameOver() {
+    dead = true;
+    started = false;
+    clearInterval(loop);
+    drawIdle(true);
+    hintEl.textContent = 'game over · click to restart';
+  }
+
+  function start() {
+    if (started) return;
+    init();
+    started = true;
+    hintEl.textContent = '';
+    loop = setInterval(step, 130);
+  }
+
+  // Controls
+  document.addEventListener('keydown', function (e) {
+    var map = {
+      ArrowUp:    { x: 0,  y: -1 },
+      ArrowDown:  { x: 0,  y:  1 },
+      ArrowLeft:  { x: -1, y:  0 },
+      ArrowRight: { x: 1,  y:  0 }
+    };
+    var d = map[e.key];
+    if (!d) return;
+    // Prevent reversing
+    if (d.x === -dir.x && d.y === -dir.y) return;
+    if (started) {
+      e.preventDefault();
+      nextDir = d;
+    }
+  });
+
+  canvas.addEventListener('click', function () {
+    if (!started) start();
+  });
+
+  // Initial idle screen
+  started = false;
+  dead = false;
+  snake = [{ x: 8, y: 5 }, { x: 7, y: 5 }, { x: 6, y: 5 }];
+  dir = { x: 1, y: 0 };
+  nextDir = { x: 1, y: 0 };
+  drawIdle(false);
+})();
 </script>
 
 </PageLayout>
