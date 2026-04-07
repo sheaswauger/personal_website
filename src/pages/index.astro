@@ -105,16 +105,22 @@ const writing = (await getCollection("writing"))
             </ul>
 
             <!-- Snake game -->
-            <div class="mt-8">
-              <div class="flex justify-between items-baseline mb-2">
-                <span id="snake-best" class="text-xs text-black/30 dark:text-white/30">best: 0</span>
-                <div class="flex items-center gap-2">
-                  <span id="snake-speed-dots" class="flex gap-0.5"></span>
-                  <span id="snake-score" class="text-xs text-black/30 dark:text-white/30">score: 0</span>
+            <div class="mt-8 inline-block">
+              <!-- Nokia bezel -->
+              <div style="background:#2a2a2a;border-radius:8px;padding:10px 12px 8px;border:2px solid #1a1a1a;display:inline-block;">
+                <!-- Score bar inside bezel -->
+                <div id="snake-score-bar" style="font-family:monospace;font-size:12px;color:#1a2a0a;background:#8a9e2a;padding:2px 6px 4px;display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span id="snake-score">score: 0</span>
+                  <span style="display:flex;align-items:center;gap:6px;">
+                    <span id="snake-speed-dots" style="display:flex;gap:3px;"></span>
+                    <span id="snake-best">best: 0</span>
+                  </span>
                 </div>
-              </div>
-              <div class="border border-white/15 rounded-lg p-3 inline-block">
-                <canvas id="snake-canvas" width="420" height="300" class="block"></canvas>
+                <!-- Canvas + scanline overlay -->
+                <div style="position:relative;display:block;">
+                  <canvas id="snake-canvas" width="420" height="300" style="display:block;"></canvas>
+                  <div style="position:absolute;inset:0;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,rgba(0,0,0,0.07) 3px,rgba(0,0,0,0.07) 4px);pointer-events:none;"></div>
+                </div>
               </div>
               <p class="text-xs text-white/20 text-center mt-2">arrow keys to play</p>
             </div>
@@ -221,6 +227,7 @@ const writing = (await getCollection("writing"))
   var CELL = 20, COLS = 21, ROWS = 15;
   var W = COLS * CELL, H = ROWS * CELL; // 420x300
   var BASE_SPEED = 180, MIN_SPEED = 80, SPEED_STEP = 10, APPLES_PER_TIER = 3, MAX_TIERS = 5;
+  var LCD_BG = '#8a9e2a', LCD_FG = '#1a2a0a';
 
   var canvas = document.getElementById('snake-canvas');
   var ctx = canvas.getContext('2d');
@@ -233,10 +240,6 @@ const writing = (await getCollection("writing"))
 
   var highScore = parseInt(localStorage.getItem('snake-high-score') || '0', 10);
   bestEl.textContent = 'best: ' + highScore;
-
-  function isDark() {
-    return document.documentElement.classList.contains('dark');
-  }
 
   function getAudioCtx() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -292,7 +295,7 @@ const writing = (await getCollection("writing"))
       dot.style.width = '5px';
       dot.style.height = '5px';
       dot.style.borderRadius = '50%';
-      dot.style.background = i < tier ? 'rgba(224,90,58,0.6)' : 'rgba(128,128,128,0.2)';
+      dot.style.background = i < tier ? LCD_FG : 'rgba(26,42,10,0.2)';
       dotsEl.appendChild(dot);
     }
   }
@@ -323,67 +326,75 @@ const writing = (await getCollection("writing"))
     return pos;
   }
 
-  function drawBoard(flashRed) {
-    var dark = isDark();
-    for (var row = 0; row < ROWS; row++) {
-      for (var col = 0; col < COLS; col++) {
-        var checker = (row + col) % 2 === 0;
-        if (flashRed) {
-          ctx.fillStyle = checker ? '#5a0a0a' : '#6b1010';
-        } else {
-          ctx.fillStyle = dark
-            ? (checker ? '#0a0a0a' : '#111111')
-            : (checker ? '#f9f9f9' : '#f2f2f2');
-        }
-        ctx.fillRect(col * CELL, row * CELL, CELL, CELL);
-      }
-    }
+  function drawBoard() {
+    ctx.fillStyle = LCD_BG;
+    ctx.fillRect(0, 0, W, H);
   }
 
-  function drawFood(radius) {
-    var r = (radius !== undefined) ? radius : CELL / 2 - 2;
-    ctx.fillStyle = '#e05a3a';
-    ctx.beginPath();
-    ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, r, 0, Math.PI * 2);
-    ctx.fill();
+  function drawFood() {
+    ctx.fillStyle = LCD_FG;
+    ctx.save();
+    ctx.translate(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2);
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-4, -4, 8, 8);
+    ctx.restore();
   }
 
   function drawSnake() {
-    var dark = isDark();
+    var head = snake[0];
+    ctx.fillStyle = LCD_FG;
     for (var i = 0; i < snake.length; i++) {
-      var t = i / Math.max(snake.length - 1, 1);
-      var alpha = dark ? (1 - t * 0.7) : (1 - t * 0.65);
-      ctx.fillStyle = dark
-        ? 'rgba(220,220,220,' + alpha + ')'
-        : 'rgba(30,30,30,' + alpha + ')';
       ctx.fillRect(snake[i].x * CELL + 1, snake[i].y * CELL + 1, CELL - 2, CELL - 2);
+    }
+    // Eyes on head: 2x2 white pixels, positioned by direction
+    ctx.fillStyle = LCD_BG;
+    var hx = head.x * CELL, hy = head.y * CELL;
+    if (dir.x === 1) {        // moving right — eyes on right side
+      ctx.fillRect(hx + CELL - 5, hy + 3, 2, 2);
+      ctx.fillRect(hx + CELL - 5, hy + CELL - 5, 2, 2);
+    } else if (dir.x === -1) { // moving left — eyes on left side
+      ctx.fillRect(hx + 3, hy + 3, 2, 2);
+      ctx.fillRect(hx + 3, hy + CELL - 5, 2, 2);
+    } else if (dir.y === -1) { // moving up — eyes on top
+      ctx.fillRect(hx + 3, hy + 3, 2, 2);
+      ctx.fillRect(hx + CELL - 5, hy + 3, 2, 2);
+    } else {                   // moving down — eyes on bottom
+      ctx.fillRect(hx + 3, hy + CELL - 5, 2, 2);
+      ctx.fillRect(hx + CELL - 5, hy + CELL - 5, 2, 2);
     }
   }
 
-  function draw(foodRadius) {
-    drawBoard(false);
-    drawFood(foodRadius);
+  function draw() {
+    drawBoard();
+    drawFood();
     drawSnake();
   }
 
-  // Food pulse via rAF
+  // Food pulse via rAF (diamond size oscillation)
   function startFoodPulse() {
     var start = performance.now();
     function pulse(now) {
       if (!started) return;
-      var t = ((now - start) % 1000) / 1000; // 0..1 over 1s
-      var r = (CELL / 2 - 3) + 2 * (0.5 + 0.5 * Math.sin(t * Math.PI * 2));
-      draw(r);
+      var t = ((now - start) % 1000) / 1000;
+      var size = 7 + 2 * Math.sin(t * Math.PI * 2); // oscillates 5..9px half-size
+      drawBoard();
+      // Draw pulsing diamond
+      ctx.fillStyle = LCD_FG;
+      ctx.save();
+      ctx.translate(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2);
+      ctx.rotate(Math.PI / 4);
+      ctx.fillRect(-size / 2, -size / 2, size, size);
+      ctx.restore();
+      drawSnake();
       foodPulseRaf = requestAnimationFrame(pulse);
     }
     foodPulseRaf = requestAnimationFrame(pulse);
   }
 
   function drawIdle(gameOver) {
-    drawBoard(false);
-    var dark = isDark();
-    ctx.fillStyle = dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.15)';
-    ctx.font = '13px monospace';
+    drawBoard();
+    ctx.fillStyle = LCD_FG;
+    ctx.font = '12px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(
@@ -396,7 +407,6 @@ const writing = (await getCollection("writing"))
     clearInterval(loop);
     loop = setInterval(function () {
       step();
-      // Restart interval if speed tier changed
       var newInterval = currentInterval();
       if (newInterval !== interval) {
         interval = newInterval;
@@ -425,26 +435,10 @@ const writing = (await getCollection("writing"))
     }
   }
 
-  function flashAndGameOver() {
+  function gameOver() {
     clearInterval(loop);
     if (foodPulseRaf) { cancelAnimationFrame(foodPulseRaf); foodPulseRaf = null; }
     playDeath();
-
-    var flashes = 0;
-    function doFlash() {
-      drawBoard(flashes % 2 === 0);
-      drawSnake();
-      flashes++;
-      if (flashes < 6) {
-        setTimeout(doFlash, 50);
-      } else {
-        finishGameOver();
-      }
-    }
-    doFlash();
-  }
-
-  function finishGameOver() {
     dead = true;
     started = false;
 
@@ -455,10 +449,6 @@ const writing = (await getCollection("writing"))
     }
 
     drawIdle(true);
-  }
-
-  function gameOver() {
-    flashAndGameOver();
   }
 
   function start() {
@@ -480,14 +470,13 @@ const writing = (await getCollection("writing"))
     var d = map[e.key];
     if (!d) return;
     e.preventDefault();
-    getAudioCtx(); // unlock audio on first keypress
+    getAudioCtx();
     if (!started) {
       start();
       nextDir = d;
       dir = d;
       return;
     }
-    // Prevent reversing
     if (d.x === -dir.x && d.y === -dir.y) return;
     nextDir = d;
   });
