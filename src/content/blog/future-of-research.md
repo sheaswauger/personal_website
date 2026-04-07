@@ -1,0 +1,18 @@
+---
+title: "The Future of Research Is Mixed, Messy, and Human"
+description: "Reflections on the evolving nature of research practice and what it means to do rigorous, humane inquiry in a world of algorithmic shortcuts."
+date: "2025-07-22"
+tags: ["Research", "Academia"]
+---
+
+When people talk about "research," they usually imagine something related to computers, numerical data, and instruments buzzing and blinking with importance. They're not wrong, but while this mental image is common in the popular imagination, it's incomplete.
+
+I love data and statistics more than most people, and quantitative research can do amazing things, but it's almost like quant hired a top-tier PR firm. Scientists are regularly depicted in movies saving the world with laser beams, miracle cures, and last-second hacking skillz. Similarly, industries like tech or finance prioritize quantitative methods, and when governments invoke "evidence-based policy," they usually mean the numerical kind. However, elevating quantitative research often sidelines qualitative research as though it's somehow less valid, rigorous, or useful to the public. I get that numbers and data feel objective (they're not) and that talking with people feels messy (it is), but the insights you can gain from qualitative research can be truly incredible.
+
+Qualitative research uses techniques like interviews, focus groups, ethnographies, surveys, text analysis, and others, and it can lead to discoveries and concepts that change how we think and live. It's led to essential ideas like sexuality being a spectrum and the social construction of race. It's helped us understand how to improve veterans' healthcare, save lives in a natural disaster, and increase success in addiction recovery. Hint: they all involve asking people what they want instead of giving them what we think they need. Qualitative researchers influence how your grocery store is arranged, how your clothes fit, your kids' seating arrangement at school, your social media homepage, and whether you experience less anxiety at your next visit to the dentist. It gives us the "why" behind the numbers. It uncovers meaning, context, values, and experiences that inform our choices and how we build the future.
+
+We need to stop treating qualitative and quantitative research as opposing teams. Mixed methods research combines the breadth of quantitative data with the depth of qualitative insights. It lets us trace patterns and understand the messy, human realities behind them. This approach is especially critical in complex fields like education, technology, health, and privacy, where metrics can't always capture nuance, and stories can't always stand alone. Mixed methods research helps us validate findings, uncover blind spots, and develop more inclusive, evidence-rich solutions.
+
+Beyond the quant/qual divide, we need to start integrating multiple disciplines into our research questions, theories, and designs. Education and computer science. Sociology and engineering. Interdisciplinary work doesn't dilute expertise; it expands our understanding and often increases the impact of our work. It gives us more tools to ask better questions and address real-world challenges in all their complexity.
+
+I won't lie; doing mixed methods research is usually harder. Interdisciplinary research is generally slower. They take more time, more people, and more humility, but it's always been worth it. We need to use all the tools at our disposal to solve the problems we face. It won't be a lone scientist with a laser beam that will save the world; it will be millions of experts collaborating who decide to make a better one.

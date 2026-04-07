@@ -1,0 +1,114 @@
+---
+import { getCollection } from "astro:content"
+import PageLayout from "@layouts/PageLayout.astro"
+import ArrowCard from "@components/ArrowCard"
+import { SITE } from "@consts"
+
+const posts = (await getCollection("blog"))
+  .filter(post => !post.data.draft)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  .slice(0, 3)
+
+const writing = (await getCollection("writing"))
+  .sort((a, b) => b.data.year - a.data.year)
+  .slice(0, 3)
+---
+
+<PageLayout title="Home" description={SITE.DESCRIPTION}>
+
+  <!-- HERO -->
+  <section class="relative w-full">
+    <div class="animate w-full">
+      <div class="relative w-full">
+        <div class="p-5 pt-32 pb-16 text-center">
+          <p class="animated text-2xl md:text-3xl lg:text-4xl font-bold text-black dark:text-white">
+            Shea Swauger
+          </p>
+          <p class="animated text-sm md:text-base lg:text-lg opacity-75 mt-2 max-w-lg mx-auto">
+            Hi there! It's nice to meet you. I'm a researcher and writer who cares about technology, public policy, and education.
+          </p>
+          <div id="ctaButtons" class="animated flex flex-wrap gap-4 justify-center mt-5">
+            <a href="/writing" class="py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black dark:bg-white text-white dark:text-black hover:opacity-75 blend">
+              Read my writing
+            </a>
+            <a href="/presentations" class="py-2 px-4 truncate rounded text-xs md:text-sm lg:text-base border border-black/25 dark:border-white/25 hover:bg-black/5 hover:dark:bg-white/15 blend">
+              View presentations
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Divider -->
+  <div class="relative bg-white dark:bg-black">
+    <div class="border-t border-black/10 dark:border-white/25"></div>
+
+    <!-- Two-column section -->
+    <div class="mx-auto max-w-screen-lg px-5 py-16">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+
+        <!-- Left: Recent Blog Posts -->
+        <section class="animate">
+          <div class="space-y-4">
+            <div class="flex justify-between items-baseline">
+              <p class="font-semibold text-black dark:text-white">
+                Recent Posts
+              </p>
+              <a href="/blog" class="group flex gap-1 items-center underline decoration-[.5px] decoration-black/25 dark:decoration-white/50 hover:decoration-black dark:hover:decoration-white text-black dark:text-white underline-offset-2 blend text-sm">
+                <span class="text-black/75 dark:text-white/75 group-hover:text-black group-hover:dark:text-white blend">
+                  All posts
+                </span>
+              </a>
+            </div>
+            <ul class="space-y-4">
+              {posts.map((post) => (
+                <li>
+                  <ArrowCard entry={post} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <!-- Right: Recent Writing -->
+        <section class="animate">
+          <div class="space-y-4">
+            <div class="flex justify-between items-baseline">
+              <p class="font-semibold text-black dark:text-white">
+                Recent Writing
+              </p>
+              <a href="/writing" class="group flex gap-1 items-center underline decoration-[.5px] decoration-black/25 dark:decoration-white/50 hover:decoration-black dark:hover:decoration-white text-black dark:text-white underline-offset-2 blend text-sm">
+                <span class="text-black/75 dark:text-white/75 group-hover:text-black group-hover:dark:text-white blend">
+                  All writing
+                </span>
+              </a>
+            </div>
+            <ul class="space-y-5">
+              {writing.map((entry) => (
+                <li>
+                  <a
+                    href={entry.data.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="group block hover:text-black dark:hover:text-white transition-colors duration-300 ease-in-out"
+                  >
+                    <div class="font-medium text-black dark:text-white group-hover:underline decoration-[.5px] underline-offset-2 line-clamp-2">
+                      {entry.data.title}
+                    </div>
+                    <div class="text-sm opacity-60 mt-0.5">
+                      {entry.data.venue} · {entry.data.year}
+                    </div>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+</PageLayout>

@@ -1,0 +1,59 @@
+---
+import { getCollection } from "astro:content"
+import PageLayout from "@layouts/PageLayout.astro"
+import TopLayout from "@layouts/TopLayout.astro"
+import BottomLayout from "@layouts/BottomLayout.astro"
+import { PRESS } from "@consts"
+
+const press = (await getCollection("press"))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+}
+---
+
+<PageLayout title={PRESS.TITLE} description={PRESS.DESCRIPTION}>
+  <TopLayout>
+    <div class="animate">
+      <h1 class="text-3xl font-semibold text-black dark:text-white mt-2">
+        {PRESS.TITLE}
+      </h1>
+      <div class="mt-1">
+        {PRESS.DESCRIPTION}
+      </div>
+    </div>
+  </TopLayout>
+  <BottomLayout>
+    <ul class="animate divide-y divide-black/10 dark:divide-white/10">
+      {press.map((entry) => (
+        <li class="py-4">
+          {entry.data.url ? (
+            <a
+              href={entry.data.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="group block"
+            >
+              <div class="font-medium text-black dark:text-white group-hover:underline decoration-[.5px] underline-offset-2 blend">
+                {entry.data.title}
+              </div>
+            </a>
+          ) : (
+            <div class="font-medium text-black dark:text-white">
+              {entry.data.title}
+            </div>
+          )}
+          <div class="flex flex-wrap items-center gap-2 mt-0.5">
+            <span class="text-sm opacity-60">
+              {entry.data.outlet} &middot; {formatDate(entry.data.date)}
+            </span>
+            <span class="text-xs uppercase px-2 py-0.5 rounded bg-black/5 dark:bg-white/20 text-black/60 dark:text-white/60">
+              {entry.data.type}
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </BottomLayout>
+</PageLayout>
