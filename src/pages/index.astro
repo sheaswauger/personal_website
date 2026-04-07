@@ -130,9 +130,32 @@ const writing = (await getCollection("writing"))
   const btn = document.getElementById('veryImportantBtn');
   const overlay = document.getElementById('encouragementOverlay');
   const closeBtn = document.getElementById('overlayClose');
+
   let dismissTimer = null;
+  let fadeTimer = null;
+  let confettiInterval = null;
+
+  // Ensure confetti canvas sits above the overlay
+  function ensureConfettiOnTop() {
+    var canvas = document.querySelector('canvas.confetti-canvas') || document.querySelector('canvas[style*="position: fixed"]');
+    if (canvas) canvas.style.zIndex = '10000';
+  }
+
+  function fireBurst() {
+    confetti({
+      particleCount: 80,
+      spread: 160,
+      origin: { y: 0 },
+      startVelocity: 45,
+      scalar: 1.2
+    });
+    ensureConfettiOnTop();
+  }
 
   function showOverlay() {
+    clearAllTimers();
+
+    overlay.style.transition = 'opacity 300ms';
     overlay.style.display = 'flex';
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
@@ -140,20 +163,38 @@ const writing = (await getCollection("writing"))
       });
     });
 
-    confetti({
-      particleCount: 300,
-      spread: 180,
-      origin: { y: 0.5 },
-      scalar: 1.4
-    });
+    // Continuous confetti every 200ms, stop firing at 3500ms
+    fireBurst();
+    confettiInterval = setInterval(fireBurst, 200);
 
+    // At 3500ms: stop new bursts and begin fade
+    fadeTimer = setTimeout(function () {
+      clearInterval(confettiInterval);
+      confettiInterval = null;
+      overlay.style.transition = 'opacity 500ms';
+      overlay.style.opacity = '0';
+    }, 3500);
+
+    // At 4000ms: hide and clean up
+    dismissTimer = setTimeout(function () {
+      hideOverlay();
+    }, 4000);
+  }
+
+  function clearAllTimers() {
     clearTimeout(dismissTimer);
-    dismissTimer = setTimeout(hideOverlay, 5000);
+    clearTimeout(fadeTimer);
+    clearInterval(confettiInterval);
+    dismissTimer = null;
+    fadeTimer = null;
+    confettiInterval = null;
   }
 
   function hideOverlay() {
+    clearAllTimers();
+    overlay.style.transition = 'opacity 300ms';
     overlay.style.opacity = '0';
-    clearTimeout(dismissTimer);
+    confetti.reset();
     setTimeout(function () {
       overlay.style.display = 'none';
     }, 300);
