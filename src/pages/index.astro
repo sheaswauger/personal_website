@@ -28,13 +28,13 @@ const writing = (await getCollection("writing"))
             Hi there! It's nice to meet you. I'm a researcher and writer who cares about technology, public policy, and education.
           </p>
           <div id="ctaButtons" class="animated flex flex-wrap gap-4 justify-center mt-5">
-            <a href="/writing" class="py-2 px-4 rounded truncate text-xs md:text-sm lg:text-base bg-black text-white dark:bg-white dark:text-black hover:opacity-75 blend">
-              Read my writing
+            <a href="/writing" class="bg-transparent border border-white/40 text-white px-5 py-2 rounded-full text-sm hover:bg-white/10 transition-colors">
+              Writing
             </a>
-            <a href="/presentations" class="py-2 px-4 truncate rounded text-xs md:text-sm lg:text-base border border-black dark:border-white hover:bg-black/5 hover:dark:bg-white/15 blend">
-              View presentations
+            <a href="/presentations" class="bg-transparent border border-white/40 text-white px-5 py-2 rounded-full text-sm hover:bg-white/10 transition-colors">
+              Presentations
             </a>
-            <button id="veryImportantBtn" class="py-2 px-4 truncate rounded text-xs md:text-sm lg:text-base border border-black dark:border-white hover:bg-black/5 hover:dark:bg-white/15 blend cursor-pointer">
+            <button id="veryImportantBtn" class="bg-transparent border border-white/40 text-white px-5 py-2 rounded-full text-sm hover:bg-white/10 transition-colors cursor-pointer">
               Very Important
             </button>
           </div>
@@ -117,29 +117,50 @@ const writing = (await getCollection("writing"))
   </div>
 
 
+<!-- Fullscreen encouragement overlay -->
+<div id="encouragementOverlay" style="display:none; opacity:0;" class="fixed inset-0 z-[9999] bg-black flex items-center justify-center transition-opacity duration-300">
+  <button id="overlayClose" class="absolute top-6 right-8 text-white text-2xl cursor-pointer bg-transparent border-none leading-none">&times;</button>
+  <p class="text-white text-5xl md:text-6xl font-bold text-center max-w-2xl px-8">
+    You're doing a good job and things are gonna be ok.
+  </p>
+</div>
+
 <script is:inline src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script is:inline>
   const btn = document.getElementById('veryImportantBtn');
-  let resetTimer = null;
+  const overlay = document.getElementById('encouragementOverlay');
+  const closeBtn = document.getElementById('overlayClose');
+  let dismissTimer = null;
 
-  btn.addEventListener('click', function () {
-    btn.textContent = "You're doing a good job and things are gonna be ok.";
-
-    confetti({
-      particleCount: 40,
-      spread: 55,
-      startVelocity: 22,
-      scalar: 0.7,
-      ticks: 180,
-      origin: { y: 0.45 },
-      colors: ['#a8edea', '#fed6e3', '#f9ca24', '#6ab04c', '#e056fd']
+  function showOverlay() {
+    overlay.style.display = 'flex';
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        overlay.style.opacity = '1';
+      });
     });
 
-    clearTimeout(resetTimer);
-    resetTimer = setTimeout(function () {
-      btn.textContent = 'Very Important';
-    }, 3000);
-  });
+    confetti({
+      particleCount: 300,
+      spread: 180,
+      origin: { y: 0.5 },
+      scalar: 1.4
+    });
+
+    clearTimeout(dismissTimer);
+    dismissTimer = setTimeout(hideOverlay, 5000);
+  }
+
+  function hideOverlay() {
+    overlay.style.opacity = '0';
+    clearTimeout(dismissTimer);
+    setTimeout(function () {
+      overlay.style.display = 'none';
+    }, 300);
+  }
+
+  btn.addEventListener('click', showOverlay);
+  closeBtn.addEventListener('click', hideOverlay);
 </script>
 
 </PageLayout>
