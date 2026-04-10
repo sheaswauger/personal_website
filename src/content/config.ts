@@ -19,6 +19,7 @@ const writing = defineCollection({
     year: z.number(),
     url: z.string(),
     authors: z.array(z.string()).optional(),
+    category: z.enum(["academic", "journalism"]).optional().default("academic"),
   }),
 })
 

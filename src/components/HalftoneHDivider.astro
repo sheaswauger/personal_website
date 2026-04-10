@@ -1,0 +1,33 @@
+---
+// Full-width pink halftone dot band — fades to #0d0d0d at left and right edges
+// Used as a section divider on the homepage
+const uid = Math.random().toString(36).slice(2, 7)
+const patId = `hdots-${uid}`
+const gradId = `hfade-${uid}`
+const maskId = `hmask-${uid}`
+---
+
+<div class="w-full" aria-hidden="true">
+  <svg
+    width="100%"
+    height="56"
+    xmlns="http://www.w3.org/2000/svg"
+    style="display:block;"
+  >
+    <defs>
+      <pattern id={patId} x="0" y="0" width="11" height="11" patternUnits="userSpaceOnUse">
+        <circle cx="5.5" cy="5.5" r="2.4" fill="#d4a8bc" />
+      </pattern>
+      <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
+        <stop offset="0%" stop-color="black" />
+        <stop offset="9%" stop-color="white" />
+        <stop offset="91%" stop-color="white" />
+        <stop offset="100%" stop-color="black" />
+      </linearGradient>
+      <mask id={maskId}>
+        <rect width="100%" height="56" fill={`url(#${gradId})`} />
+      </mask>
+    </defs>
+    <rect width="100%" height="56" fill={`url(#${patId})`} mask={`url(#${maskId})`} opacity="0.28" />
+  </svg>
+</div>

@@ -1,0 +1,38 @@
+---
+// Ghost "SWAUGER" halftone dot text — positioned bottom-right of hero section
+// Clip + dot pattern approach: pink dots masked to letter shapes
+---
+
+<svg
+  class="absolute bottom-0 right-0 pointer-events-none select-none"
+  width="1000"
+  height="260"
+  viewBox="0 0 1000 260"
+  aria-hidden="true"
+  focusable="false"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <pattern id="hero-halftone-dots" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2.3" fill="#d4a8bc" />
+    </pattern>
+    <mask id="swauger-text-mask">
+      <text
+        x="0"
+        y="218"
+        font-family="Inter, sans-serif"
+        font-weight="700"
+        font-size="220"
+        letter-spacing="-8"
+        fill="white"
+      >SWAUGER</text>
+    </mask>
+  </defs>
+  <rect
+    width="1000"
+    height="260"
+    fill="url(#hero-halftone-dots)"
+    mask="url(#swauger-text-mask)"
+    opacity="0.065"
+  />
+</svg>

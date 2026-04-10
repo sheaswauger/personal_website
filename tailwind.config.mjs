@@ -6,8 +6,12 @@ export default {
   content: ["./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}"],
   theme: {
     extend: {
+      colors: {
+        pink: "#d4a8bc",
+        darkBg: "#0d0d0d",
+      },
       fontFamily: {
-        "sans": ["Atkinson", ...defaultTheme.fontFamily.sans],
+        "sans": ["Inter", ...defaultTheme.fontFamily.sans],
       },
       typography: {
         DEFAULT: {
