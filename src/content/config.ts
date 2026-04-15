@@ -55,6 +55,7 @@ const grants = defineCollection({
     year: z.number(),
     amount: z.string().optional(),
     description: z.string().optional(),
+    url: z.string().optional(),
   }),
 })
 

@@ -23,9 +23,20 @@ const grants = (await getCollection("grants"))
             {String(i + 1).padStart(2, '0')}
           </span>
           <div class="min-w-0">
-            <div class="text-sm text-white line-clamp-2">
-              {entry.data.title}
-            </div>
+            {entry.data.url ? (
+              <a
+                href={entry.data.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-sm text-white hover:text-[#d4a8bc] transition-colors duration-200 line-clamp-2"
+              >
+                {entry.data.title}
+              </a>
+            ) : (
+              <div class="text-sm text-white line-clamp-2">
+                {entry.data.title}
+              </div>
+            )}
             <div class="text-xs text-white/40 mt-0.5">
               {entry.data.funder}
               {entry.data.amount && (
