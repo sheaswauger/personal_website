@@ -56,6 +56,8 @@ const grants = defineCollection({
     amount: z.string().optional(),
     description: z.string().optional(),
     url: z.string().optional(),
+    status: z.enum(["active", "completed"]).optional(),
+    period: z.string().optional(),
   }),
 })
 

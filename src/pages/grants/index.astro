@@ -18,7 +18,7 @@ const grants = (await getCollection("grants"))
   <BottomLayout>
     <ul class="animate border-t border-white/[0.07]">
       {grants.map((entry, i) => (
-        <li class="py-4 border-b border-white/[0.07] grid grid-cols-[2rem_1fr_3rem] gap-4 items-start">
+        <li class="py-4 border-b border-white/[0.07] grid grid-cols-[2rem_1fr] gap-4 items-start">
           <span class="font-mono text-xs text-[#d4a8bc]/30 mt-0.5 select-none">
             {String(i + 1).padStart(2, '0')}
           </span>
@@ -37,19 +37,35 @@ const grants = (await getCollection("grants"))
                 {entry.data.title}
               </div>
             )}
-            <div class="text-xs text-white/40 mt-0.5">
-              {entry.data.funder}
-              {entry.data.amount && (
-                <span class="text-white/25"> &middot; {entry.data.amount}</span>
+            <div class="flex flex-wrap items-center gap-3 mt-0.5">
+              <span class="text-xs text-white/40">
+                {entry.data.funder} &middot; {entry.data.year}
+                {entry.data.period && (
+                  <span class="text-white/30"> ({entry.data.period})</span>
+                )}
+              </span>
+              {entry.data.status && (
+                <span class:list={[
+                  "text-[9px] px-1.5 py-0.5 uppercase tracking-wide",
+                  entry.data.status === "active"
+                    ? "text-white/40 border border-white/[0.15]"
+                    : "text-white/20 border border-white/[0.07]",
+                ]}>
+                  {entry.data.status}
+                </span>
               )}
             </div>
+            {entry.data.amount && (
+              <div class="text-xs text-white/25 mt-0.5">
+                {entry.data.amount}
+              </div>
+            )}
             {entry.data.description && (
               <div class="text-xs text-white/35 mt-1">
                 {entry.data.description}
               </div>
             )}
           </div>
-          <span class="text-xs text-white/35 text-right tabular-nums mt-0.5">{entry.data.year}</span>
         </li>
       ))}
     </ul>
