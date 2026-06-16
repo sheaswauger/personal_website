@@ -1,6 +1,6 @@
 ---
 title: "We Decided This a Long Time Ago"
-description: "On school shootings, Shanidar 1, and what our pre-history reveals about who is responsible for keeping each other safe."
+description: "On school shootings, ancient bones, and what our pre-history reveals about who is responsible for keeping each other safe."
 date: "2026-06-16"
 tags: ["Gun Violence"]
 ---
